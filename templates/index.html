@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 原有内容 -->
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+</head>
+<body>
+    <!-- ... 原有代码 ... -->
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+</body>
+<head>
+    <title>ESD视频分析</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/ins-style.css">
+</head>
+<body>
+    <div class="container">
+
+        <h1 class="gradient-title">
+            <i class="fas fa-video"></i>
+            ESD智能视频分析系统
+             <div class="title-sub">AI-Driven Video Analysis Platform</div>
+        </h1>
+        <div class="btn-group">
+            <input type="file" id="video-upload" hidden accept="video/*">
+            <button class="ins-btn primary" onclick="void document.getElementById('video-upload').click()">
+                <i class="fas fa-upload"></i> 上传视频
+            </button>
+
+            <button class="ins-btn success" onclick="startPrediction()">
+                <i class="fas fa-brain"></i> 进行预测
+            </button>
+
+            <button class="ins-btn warning" onclick="generateReport()">
+                <i class="fas fa-file-pdf"></i> 生成报告
+            </button>
+
+            <button class="ins-btn danger" onclick="resetAll()">
+                <i class="fas fa-redo"></i> 重新上传
+            </button>
+        </div>
+        <!-- 在视频容器上方添加 -->
+   <div class="upload-status">
+    <div class="upload-progress">
+        <div class="progress-bar"></div>
+    </div>
+    <div class="upload-stats">
+        <span class="speed">0 MB/s</span>
+        <span class="time">剩余时间: --</span>
+        <span class="percentage">0%</span>
+    </div>
+</div>
+
+
+        <div id="video-player" class="video-container"></div>
+        <div id="results-grid" class="grid-container"></div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

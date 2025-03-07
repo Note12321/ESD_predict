@@ -1,0 +1,23 @@
+model: YOLOv8
+input_size: [640, 640]
+num_classes: 8
+learning_rate: 0.001
+batch_size: 16
+num_epochs: 50
+train_data_path: /path/to/train/data
+val_data_path: /path/to/val/data
+weight_path: /path/to/initial/weights.pt
+image_size: 640
+iou_threshold: 0.5
+confidence_threshold: 0.4
+data_augmentation:
+  flip: true
+  rotation: 10
+  scaling: [0.8, 1.2]
+  color_jitter: true
+logging:
+  log_dir: /path/to/logs
+  log_interval: 10
+save_model:
+  save_dir: /path/to/save/models
+  save_interval: 5
