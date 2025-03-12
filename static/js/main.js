@@ -1,9 +1,7 @@
-// 上传视频处理
 document.getElementById('video-upload').addEventListener('change', async function(e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // 添加上传监控逻辑
     let uploadStartTime = Date.now();
     let loaded = 0;
 
@@ -12,44 +10,48 @@ document.getElementById('video-upload').addEventListener('change', async functio
     const timeElement = document.querySelector('.time');
     const percentageElement = document.querySelector('.percentage');
 
-    // 在原有fetch请求中添加监控
-    const response = await fetch('/upload', {
-        method: 'POST',
-        body: createFormDataWithProgress(file, (progress) => {
-            const { loaded, total } = progress;
-            const percentage = ((loaded / total) * 100).toFixed(1);
+    const formData = new FormData();
+    formData.append('video', file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/upload', true);
+
+    xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            const percentage = ((e.loaded / e.total) * 100).toFixed(1);
             const elapsed = (Date.now() - uploadStartTime) / 1000;
-            const speed = (loaded / 1024 / 1024 / elapsed).toFixed(1); // MB/s
-            const remaining = (total - loaded) / (loaded / elapsed);
+            const speed = (e.loaded / 1024 / 1024 / elapsed).toFixed(1); // MB/s
+            const remaining = (e.total - e.loaded) / (e.loaded / elapsed);
 
             progressBar.style.width = `${percentage}%`;
             speedElement.textContent = `${speed} MB/s`;
             timeElement.textContent = `剩余时间: ${formatTime(remaining)}`;
             percentageElement.textContent = `${percentage}%`;
-        })
-    });
-});
-
-/*****************
- * 新增工具函数 *
- *****************/
-function createFormDataWithProgress(file, onProgress) {
-    const formData = new FormData();
-    const xhr = new XMLHttpRequest();
-
-    formData.append('video', file);
-
-    xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-            onProgress({
-                loaded: e.loaded,
-                total: e.total
-            });
         }
     });
 
-    return xhr.send(formData);
-}
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            const videoPlayer = document.getElementById('video-player');
+            videoPlayer.innerHTML = `
+                <video id="uploaded-video" class="video-js vjs-default-skin" controls preload="auto" width="100%" height="100%">
+                    <source src="${response.video_url}" type="video/mp4">
+                </video>
+            `;
+            videojs('uploaded-video');
+        } else {
+            const response = JSON.parse(xhr.responseText);
+            alert('上传失败: ' + response.error);
+        }
+    };
+
+    xhr.onerror = function() {
+        alert('上传失败: 网络错误');
+    };
+
+    xhr.send(formData);
+});
 
 function formatTime(seconds) {
     if (isNaN(seconds) || !isFinite(seconds)) return '--';
@@ -57,21 +59,20 @@ function formatTime(seconds) {
     seconds = Math.floor(seconds % 60);
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
-// 预测功能
+
 async function startPrediction() {
-    const videoPath = document.querySelector('video source')?.src
-    if (!videoPath) return alert('请先上传视频')
+    const videoPath = document.querySelector('video source')?.src;
+    if (!videoPath) return alert('请先上传视频');
 
     try {
         const response = await fetch('/predict', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ video_path: videoPath })
-        })
-        const results = await response.json()
+        });
+        const results = await response.json();
 
-        // 渲染结果
-        const grid = document.getElementById('results-grid')
+        const grid = document.getElementById('results-grid');
         grid.innerHTML = results.images.map((img, i) => `
             <div class="result-card">
                 <img src="/static/images/${img}" alt="预测结果">
@@ -80,41 +81,55 @@ async function startPrediction() {
                     <span class="type-tag">${results.types[i]}</span>
                 </div>
             </div>
-        `).join('')
+        `).join('');
 
     } catch (error) {
-        alert('预测失败: ' + error.message)
+        alert('预测失败: ' + error.message);
     }
 }
 
-// 生成报告
 async function generateReport() {
     const btn = document.querySelector('.ins-btn.warning');
     const originalHTML = btn.innerHTML;
 
+    // 获取上传视频的文件名
+    const videoElement = document.querySelector('video source');
+    if (!videoElement) {
+        alert('请先上传视频');
+        return;
+    }
+    const videoPath = videoElement.src;
+    const filename = videoPath.substring(videoPath.lastIndexOf('/') + 1);
+
     try {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 生成中...';
         btn.disabled = true;
-        const response = await fetch('/generate-report')
-        const blob = await response.blob()
-        const url = window.URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = 'analysis-report.pdf'
-        a.click()
+        const response = await fetch(`/generate-report?filename=${filename}`);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'analysis-report.pdf';
+        a.click();
     } catch (error) {
-        alert('生成报告失败: ' + error.message)
-    }
-    finally {
+        alert('生成报告失败: ' + error.message);
+    } finally {
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
 }
 
-// 重置功能
 function resetAll() {
-    document.getElementById('video-upload').value = ''
-    document.getElementById('video-player').innerHTML = ''
-    document.getElementById('results-grid').innerHTML = ''
+    
+    document.getElementById('video-upload').value = '';
+    document.getElementById('video-player').innerHTML = '';
+    document.getElementById('results-grid').innerHTML = '';
+    // 重置上传状态
+    const progressBar = document.querySelector('.progress-bar');
+    const speedElement = document.querySelector('.speed');
+    const timeElement = document.querySelector('.time');
+    const percentageElement = document.querySelector('.percentage');        progressBar.style.width = '0%';
+    speedElement.textContent = '0 MB/s';
+    timeElement.textContent = '剩余时间: --';
+    percentageElement.textContent = '0%';
 }
-
