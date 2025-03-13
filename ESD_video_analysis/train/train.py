@@ -2,7 +2,7 @@ import os
 import yaml
 import torch
 from data_loader.data_loader import VideoDataset
-from module.module import YOLOv8
+from models.yolo_v8 import YOLOv8
 from torch.utils.data import DataLoader
 
 def load_config(config_path):
